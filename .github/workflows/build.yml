@@ -1,0 +1,35 @@
+name: Build Mac app
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build universal app
+        run: |
+          set -e
+          APP="build/Chords of Steel.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          swiftc -O app/main.swift -o build/arm64 -target arm64-apple-macos11 -framework Cocoa -framework WebKit
+          swiftc -O app/main.swift -o build/x86_64 -target x86_64-apple-macos11 -framework Cocoa -framework WebKit
+          lipo -create build/arm64 build/x86_64 -output "$APP/Contents/MacOS/ChordsOfSteel"
+          cp app/Info.plist "$APP/Contents/"
+          cp app/index.html app/AppIcon.icns "$APP/Contents/Resources/"
+          codesign --force --deep -s - "$APP"
+          cd build && ditto -c -k --keepParent "Chords of Steel.app" "Chords-of-Steel.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Chords-of-Steel
+          path: build/Chords-of-Steel.zip
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v1.${{ github.run_number }}" "build/Chords-of-Steel.zip" \
+            --title "Chords of Steel 1.${{ github.run_number }}" \
+            --notes "Download Chords-of-Steel.zip, unzip it, and drag Chords of Steel to Applications. First launch: open it, click Done on the warning, then System Settings > Privacy & Security > Open Anyway."

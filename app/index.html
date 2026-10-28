@@ -1,0 +1,490 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>Chords of Steel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column. Tabs switch between the chord search (picker + grip cards) and the copedent editor (strings down, changes across, like a copedent chart) */
+:root{
+  --bg:#EEF0F3;--panel:#FFFFFF;--ink:#141B24;--muted:#5A6573;--line:#D3D8DF;--soft:#F5F6F8;
+  --accent:#1F5FBF;--accent-soft:#DCE7F8;--root:#C2410C;--root-soft:#FBE3D6;--ok:#2E7D4F;--ok-soft:#DDF0E4;--string:#B7BEC7;
+  --up:#1F5FBF;--up-soft:#DCE7F8;--down:#B5640E;--down-soft:#F6E4CF;
+  --display:"Barlow Condensed","Arial Narrow",ui-sans-serif,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10151B;--panel:#18202A;--ink:#E6EBF1;--muted:#97A3B1;--line:#2B3542;--soft:#1E2732;
+  --accent:#6FA3F0;--accent-soft:#1D3150;--root:#F08A55;--root-soft:#43261A;--ok:#6CC892;--ok-soft:#173826;--string:#4A5562;
+  --up:#6FA3F0;--up-soft:#1D3150;--down:#E6A35A;--down-soft:#3E2A14;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10151B;--panel:#18202A;--ink:#E6EBF1;--muted:#97A3B1;--line:#2B3542;--soft:#1E2732;
+  --accent:#6FA3F0;--accent-soft:#1D3150;--root:#F08A55;--root-soft:#43261A;--ok:#6CC892;--ok-soft:#173826;--string:#4A5562;
+  --up:#6FA3F0;--up-soft:#1D3150;--down:#E6A35A;--down-soft:#3E2A14;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 56px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(32px,6vw,44px);letter-spacing:.02em;line-height:1;margin:0;text-transform:uppercase}
+.sub{margin:6px 0 0;color:var(--muted);max-width:66ch}
+button,input,select,textarea{font:inherit;color:inherit}
+.topbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.tabs{display:flex;gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:4px}
+.tabs button{border:0;background:none;border-radius:7px;padding:6px 16px;cursor:pointer;font-weight:500}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.prof{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted);min-width:0}
+.prof select{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:5px 8px;color:var(--ink);max-width:260px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.label{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500;margin:0 0 6px}
+.roots{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:4px}
+@media (max-width:620px){.roots{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.roots button{border:1px solid var(--line);background:var(--soft);border-radius:6px;padding:8px 0;font-family:var(--mono);font-size:14px;cursor:pointer}
+.roots button[aria-pressed="true"]{background:var(--root);border-color:var(--root);color:var(--panel);font-weight:500}
+.groups{display:flex;flex-direction:column;gap:8px}
+.grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.grp span.g{font-size:12px;color:var(--muted);min-width:118px}
+.chip{border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:4px 11px;font-size:13px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.filters{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:14px}
+.filters label{display:flex;gap:6px;align-items:center;cursor:pointer}
+select.sm{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:3px 6px}
+.head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
+.head h2{font-family:var(--display);font-weight:700;font-size:34px;margin:0;line-height:1}
+.head .f{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.count{font-size:14px;color:var(--muted);margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:118px minmax(0,1fr);gap:12px;min-width:0}
+.card .meta{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fret{font-family:var(--display);font-weight:700;font-size:30px;line-height:1}
+.fret small{font-family:var(--body);font-weight:400;font-size:12px;color:var(--muted);display:block;margin-top:2px}
+.hold{font-weight:600;font-size:16px;overflow-wrap:anywhere}
+.hold.open{color:var(--muted);font-weight:500}
+.strs{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.tones{font-family:var(--mono);font-size:12px}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.tag.easy{background:var(--ok-soft);border-color:transparent;color:var(--ok);font-weight:500}
+.play{align-self:flex-start;border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:3px 12px;font-size:13px;cursor:pointer;margin-top:auto}
+.play:hover{border-color:var(--accent)}
+svg.diag{width:118px;height:auto;display:block}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:14px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--panel);font-weight:500}
+.btn.danger{color:var(--down)}
+.btn.danger.arm{background:var(--down);border-color:var(--down);color:var(--panel)}
+.more{align-self:center}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:24px;text-align:center;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);max-width:80ch;margin:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.row input[type=text]{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 10px;min-width:0;width:260px;max-width:100%}
+.plate{border:1px solid var(--line);border-radius:12px;overflow-x:auto;background:var(--panel)}
+table{border-collapse:separate;border-spacing:0;min-width:100%}
+th,td{border-bottom:1px solid var(--line);text-align:center;white-space:nowrap;padding:0}
+thead th{background:var(--soft);padding:8px 4px;vertical-align:top;border-bottom:2px solid var(--line)}
+tbody tr:last-child td,tbody tr:last-child th{border-bottom:0}
+.sn{position:sticky;left:0;z-index:1;background:var(--panel);font-family:var(--display);font-weight:700;font-size:18px;width:40px;border-right:1px solid var(--line)}
+thead .sn{background:var(--soft);font-family:var(--body);font-size:12px;font-weight:500;color:var(--muted)}
+td.open{border-right:2px solid var(--line);padding:4px 8px}
+td.open select{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:3px 4px;font-family:var(--mono);font-size:14px}
+th.chg{min-width:92px}
+th.chg input{width:80px;text-align:center;font-family:var(--display);font-weight:700;font-size:17px;border:1px solid transparent;background:transparent;border-radius:6px;padding:1px 3px}
+th.chg input:hover,th.chg input:focus{border-color:var(--line);background:var(--panel)}
+th.chg select{font-size:11px;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:1px 2px;margin-top:4px;color:var(--muted)}
+th.chg .x{display:block;margin:4px auto 0;border:0;background:none;color:var(--muted);font-size:11px;text-decoration:underline;cursor:pointer}
+th.chg .x.arm{color:var(--down);font-weight:600}
+td.cell{padding:3px}
+td.cell select{appearance:none;-webkit-appearance:none;width:100%;min-width:72px;border:1px solid transparent;background:transparent;border-radius:6px;padding:6px 2px;text-align:center;text-align-last:center;font-family:var(--mono);font-size:13px;color:var(--string);cursor:pointer}
+td.cell select:hover{border-color:var(--line)}
+td.cell.up select{background:var(--up-soft);color:var(--up);font-weight:500}
+td.cell.dn select{background:var(--down-soft);color:var(--down);font-weight:500}
+textarea.io{width:100%;min-height:110px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 10px;font-family:var(--mono);font-size:12px;resize:vertical}
+.msg{font-size:13px;color:var(--ok)}
+.msg.err{color:var(--down)}
+.twocol{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Chords of Steel</h1>
+    <p class="sub">Pick a chord to see every way to play it on your steel, worked out from your copedent. Set up any steel on the Copedent tab: any number of strings, any tuning, as many pedals as you have, and every knee-lever position.</p>
+  </header>
+  <div class="topbar">
+    <div class="tabs" role="tablist"><button role="tab" id="tab-find" aria-selected="true" type="button">Find chords</button><button role="tab" id="tab-cop" aria-selected="false" type="button">Copedent</button></div>
+    <label class="prof">Steel <select id="profSel" aria-label="Active copedent"></select></label>
+  </div>
+
+  <section id="findView">
+    <div class="wrap" style="gap:16px">
+      <div class="panel" aria-label="Choose a chord">
+        <div><p class="label">Root</p><div class="roots" id="roots"></div></div>
+        <div><p class="label">Chord type</p><div class="groups" id="types"></div></div>
+        <div class="filters">
+          <label><input type="checkbox" id="three"> 3-string grips only</label>
+          <label>Most moves <select class="sm" id="maxc"><option value="9">Any</option><option value="0">None (open)</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+          <label><input type="checkbox" id="core"> Skip the outer two strings on each side</label>
+        </div>
+        <p class="note">A move is one foot or one knee: pressing two pedals together counts as one move, and each knee lever counts as one.</p>
+      </div>
+      <div class="head"><h2 id="title"></h2><span class="f" id="formula"></span></div>
+      <p class="count" id="count"></p>
+      <div class="grid" id="grid"></div>
+      <button class="btn more" id="more" type="button" hidden>Show more</button>
+      <p class="note" id="copNote"></p>
+    </div>
+  </section>
+
+  <section id="copView" hidden>
+    <div class="wrap" style="gap:16px">
+      <div class="panel">
+        <div class="row">
+          <input type="text" id="profName" aria-label="Copedent name">
+          <button class="btn" id="dup" type="button">Duplicate</button>
+          <label class="row" style="gap:6px;font-size:14px">New from <select class="sm" id="presetSel"></select></label>
+          <button class="btn" id="newProf" type="button">Create</button>
+          <button class="btn danger" id="delProf" type="button">Delete</button>
+        </div>
+        <div class="row" style="font-size:14px">
+          <span>Strings: <b id="nStr"></b></span>
+          <button class="btn" id="addStr" type="button">Add a string</button>
+          <button class="btn" id="rmStr" type="button">Remove last string</button>
+          <button class="btn" id="addPed" type="button">Add a pedal</button>
+          <button class="btn" id="addLev" type="button">Add a knee lever</button>
+        </div>
+        <div class="row" style="font-size:14px">
+          <label class="row" style="gap:6px">Pedals pressed at once (side by side) <select class="sm" id="maxPed"><option>1</option><option>2</option><option>3</option></select></label>
+          <label class="row" style="gap:6px"><input type="checkbox" id="sameKnee"> One knee can push a side lever and a vertical lever together</label>
+        </div>
+      </div>
+      <div class="plate"><table id="copTable"></table></div>
+      <p class="note">Each cell is the note that string goes to while that pedal or lever is engaged; the dash means no change. Changes save on this device as you make them. Two changes on the same string add together, the way an all-pull changer does.</p>
+      <div class="panel">
+        <p class="label" style="margin:0">Notes for a tech</p>
+        <textarea class="io" id="techNotes" style="min-height:80px;font-family:var(--body);font-size:14px" placeholder="What the tech should know: a change that doesn't reach pitch, a lever that sticks, strings or gauges you use." aria-label="Notes for a tech"></textarea>
+      </div>
+      <div class="panel">
+        <p class="label" style="margin:0">Save or open a copedent file</p>
+        <p class="note">The PDF is a clean chart to hand to a tech. The text file is readable too, and it can be opened back into this app on any computer.</p>
+        <div class="row">
+          <button class="btn primary" id="savePdf" type="button">Save as PDF</button>
+          <button class="btn" id="saveTxt" type="button">Save as text file</button>
+          <button class="btn" id="openFile" type="button">Open a copedent file</button>
+          <input type="file" id="fileIn" accept=".txt,.json,text/plain,application/json" hidden>
+          <span class="msg" id="fileMsg" aria-live="polite"></span>
+        </div>
+        <div class="row" style="border-top:1px solid var(--line);padding-top:12px">
+          <button class="btn danger" id="eraseAll" type="button">Erase all steels</button>
+          <span class="note">Removes every saved steel and starts over with a standard E9 10-string. Save a file of anything you want to keep first.</span>
+        </div>
+      </div>
+      <div class="twocol">
+        <div class="panel"><p class="label" style="margin:0">Copy this copedent as text</p><textarea class="io" id="exportBox" readonly aria-label="Copedent as text"></textarea><div class="row"><button class="btn" id="copyExp" type="button">Copy</button><span class="msg" id="expMsg" aria-live="polite"></span></div></div>
+        <div class="panel"><p class="label" style="margin:0">Paste a copedent</p><textarea class="io" id="importBox" placeholder="Paste a copedent copied from this app" aria-label="Paste copedent"></textarea><div class="row"><button class="btn" id="doImport" type="button">Import as new</button><span class="msg" id="impMsg" aria-live="polite"></span></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const PC=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const FL=["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
+const ROOTS=[["C",0],["Db",1],["D",2],["Eb",3],["E",4],["F",5],["F#",6],["G",7],["Ab",8],["A",9],["Bb",10],["B",11]];
+const MINROOT=["C","C#","D","Eb","E","F","F#","G","G#","A","Bb","B"];
+const KINDS=[["pedal","Pedal"],["LKL","Left knee, left"],["LKV","Left knee, vertical"],["LKR","Left knee, right"],["RKL","Right knee, left"],["RKV","Right knee, vertical"],["RKR","Right knee, right"],["other","Other lever"]];
+const toMidi=n=>{const m=/^([A-G]#?)(-?\d)$/.exec(n||"");return m?PC.indexOf(m[1])+12*(+m[2]+1):null};
+const toName=m=>PC[((m%12)+12)%12]+(Math.floor(m/12)-1);
+const NOTE_CHOICES=[];for(let m=24;m<=84;m++)NOTE_CHOICES.push(toName(m));
+const TYPES=[
+ ["Triads",[["maj","Major","",[0,4,7]],["min","Minor","m",[0,3,7]],["dim","Diminished","dim",[0,3,6]],["aug","Augmented","aug",[0,4,8]],["sus4","Sus4","sus4",[0,5,7]],["sus2","Sus2","sus2",[0,2,7]]]],
+ ["Sixths, sevenths",[["6","6","6",[0,4,7,9]],["m6","Minor 6","m6",[0,3,7,9]],["7","7","7",[0,4,7,10]],["maj7","Major 7","maj7",[0,4,7,11]],["m7","Minor 7","m7",[0,3,7,10]],["m7b5","m7b5","m7b5",[0,3,6,10]],["dim7","Dim 7","dim7",[0,3,6,9]],["7sus4","7sus4","7sus4",[0,5,7,10]]]],
+ ["Ninths, altered",[["add9","Add9","add9",[0,2,4,7]],["9","9","9",[0,2,4,7,10]],["maj9","Major 9","maj9",[0,2,4,7,11]],["m9","Minor 9","m9",[0,2,3,7,10]],["69","6/9","6/9",[0,2,4,7,9]],["7#5","7#5","7#5",[0,4,8,10]],["7b9","7b9","7b9",[0,1,4,7,10]]]]
+];
+const TYPEMAP={};TYPES.forEach(g=>g[1].forEach(t=>TYPEMAP[t[0]]=t));
+const IV={0:"R",1:"b9",2:"9",3:"b3",4:"3",5:"4",6:"b5",7:"5",8:"#5",9:"6",10:"b7",11:"7"};
+const FORM={maj:"1 3 5",min:"1 b3 5",dim:"1 b3 b5",aug:"1 3 #5",sus4:"1 4 5",sus2:"1 2 5","6":"1 3 5 6",m6:"1 b3 5 6","7":"1 3 5 b7",maj7:"1 3 5 7",m7:"1 b3 5 b7",m7b5:"1 b3 b5 b7",dim7:"1 b3 b5 bb7","7sus4":"1 4 5 b7",add9:"1 3 5 9","9":"1 3 b7 9 (5 optional)",maj9:"1 3 7 9 (5 optional)",m9:"1 b3 b7 9 (5 optional)","69":"1 3 6 9 (5 optional)","7#5":"1 3 #5 b7","7b9":"1 3 b7 b9 (5 optional)"};
+
+const mk=(name,notes,changes,opts={})=>({name,strings:notes.map(n=>({note:n})),changes:changes.map(([n,kind,pulls],i)=>({id:"c"+i,name:n,kind,pulls})),maxPedals:opts.maxPedals||2,sameKnee:!!opts.sameKnee});
+const PRESETS={
+  bmi:()=>mk("BMI 12-string (Clark's)",["F#4","D#4","G#4","E4","B3","G#3","F#3","E3","D3","B2","G#2","E2"],
+    [["A","pedal",{5:2,10:2}],["B","pedal",{3:1,6:1}],["C","pedal",{4:2,5:2}],["LKL","LKL",{4:1,8:1,12:-3}],["LKV","LKV",{1:2,2:1}],["LKR","LKR",{4:-1,8:-1}],["RKL","RKL",{5:-1}],["RKR","RKR",{2:-1}]]),
+  e9:()=>mk("E9 10-string, 3 pedals 4 levers",["F#4","D#4","G#4","E4","B3","G#3","F#3","E3","D3","B2"],
+    [["A","pedal",{5:2,10:2}],["B","pedal",{3:1,6:1}],["C","pedal",{4:2,5:2}],["LKL","LKL",{4:1,8:1}],["LKV","LKV",{4:-1,8:-1}],["RKL","RKL",{1:1,7:1}],["RKR","RKR",{2:-1,9:-1}]]),
+  blank10:()=>mk("New 10-string",["F#4","D#4","G#4","E4","B3","G#3","F#3","E3","D3","B2"],[]),
+  blank12:()=>mk("New 12-string",["F#4","D#4","G#4","E4","B3","G#3","F#3","E3","D3","B2","G#2","E2"],[])
+};
+const PRESET_LABELS=[["bmi","Clark's BMI 12-string"],["e9","Standard E9 10-string"],["blank10","Blank 10-string (E9 open, no changes)"],["blank12","Blank 12-string (E9 open, no changes)"]];
+
+const KEY="chordfinder.v2";
+let store=null;
+try{store=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){}
+if(!store||!Array.isArray(store.profiles)||!store.profiles.length){const p=PRESETS.bmi();p.id="p1";store={profiles:[p],active:"p1",ui:{}}}
+let ui=Object.assign({three:false,maxc:2,core:false},store.ui||{},{root:0,type:"maj",tab:"find"});
+let shown=12;
+function persist(){store.ui={root:ui.root,type:ui.type,three:ui.three,maxc:ui.maxc,core:ui.core,tab:ui.tab};try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}}
+const prof=()=>store.profiles.find(p=>p.id===store.active)||store.profiles[0];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+
+// ---------- search ----------
+let cache={key:null,combos:null};
+function combos(p){
+  const key=JSON.stringify(p);
+  if(cache.key===key)return cache.combos;
+  const ped=p.changes.filter(c=>c.kind==="pedal");
+  const pedSets=[[]];
+  for(let i=0;i<ped.length;i++)for(let len=1;len<=Math.max(1,p.maxPedals);len++){if(i+len<=ped.length)pedSets.push(ped.slice(i,i+len))}
+  const knee=side=>{
+    const lat=p.changes.filter(c=>c.kind===side+"KL"||c.kind===side+"KR"), ver=p.changes.filter(c=>c.kind===side+"KV");
+    const opts=[[]];lat.forEach(c=>opts.push([c]));ver.forEach(c=>opts.push([c]));
+    if(p.sameKnee)lat.forEach(a=>ver.forEach(v=>opts.push([a,v])));
+    return opts;
+  };
+  const oth=[[]].concat(p.changes.filter(c=>c.kind==="other").map(c=>[c]));
+  const out=[];
+  for(const a of pedSets)for(const l of knee("L"))for(const r of knee("R"))for(const o of oth){
+    const cs=a.concat(l,r,o);
+    const moves=(a.length?1:0)+l.length+r.length+o.length;
+    const pit=p.strings.map((s,i)=>{const b=toMidi(s.note);return b==null?null:b+cs.reduce((t,c)=>t+(+c.pulls[i+1]||0),0)});
+    out.push({cs,moves,pit,name:cs.map(c=>c.name).join(" + ")});
+  }
+  cache={key,combos:out};return out;
+}
+function sets(n){const out=[];for(let a=1;a<=n;a++)for(let b=a+1;b<=n;b++)for(let c=b+1;c<=n;c++){if(c-a<=4)out.push([a,b,c]);for(let d=c+1;d<=n;d++)if(d-a<=4)out.push([a,b,c,d])}return out}
+function search(p,type){
+  const ch=TYPEMAP[type][3],full=new Set(ch),no5=ch.length>=4&&full.has(7)?new Set(ch.filter(x=>x!==7)):null;
+  const eq=(A,B)=>A.size===B.size&&[...A].every(x=>B.has(x));
+  const n=p.strings.length,res=[];
+  for(const cb of combos(p)){
+    for(const strs of sets(n)){
+      if(cb.cs.some(c=>!strs.some(s=>c.pulls[s]!==undefined&&+c.pulls[s]!==0)))continue;
+      const pit=strs.map(s=>cb.pit[s-1]);if(pit.some(x=>x==null))continue;
+      const pcs=new Set(pit.map(x=>((x%12)+12)%12));if(pcs.size<strs.length)continue;
+      for(const r of pcs){
+        const iv=new Set([...pcs].map(x=>(x-r+12)%12));
+        if(!(eq(iv,full)||(no5&&eq(iv,no5))))continue;
+        const low=pit.indexOf(Math.min(...pit)),bassRoot=((pit[low]%12)+12)%12===r;
+        const span=strs[strs.length-1]-strs[0];
+        const outer=n>=10&&strs.some(s=>s<=2||s>n-2);
+        const tight=strs.length===3&&span<=2;
+        const score=cb.moves+span*0.4+(strs.length-3)*0.8+(bassRoot?0:0.2)+(outer?0.5:0)-(tight?(span===2?1.0:0.6):0);
+        res.push({name:cb.name,moves:cb.moves,strs,pit,r0:r,bassRoot,outer,tight,score});
+      }
+    }
+  }
+  return res.sort((a,b)=>a.score-b.score);
+}
+
+// ---------- find view ----------
+function chordName(){const t=TYPEMAP[ui.type];const minorish=["min","m6","m7","m7b5","dim","dim7","m9"].includes(ui.type);return (minorish?MINROOT[ui.root]:ROOTS[ui.root][0])+t[2]}
+function spell(pc){const flatKey=[1,3,5,8,10].includes(ui.root)||(["min","m6","m7","m9","dim","m7b5","dim7"].includes(ui.type)&&[0,2,5,7,10,3].includes(ui.root));return (flatKey?FL:PC)[((pc%12)+12)%12]}
+function renderPicker(){
+  $("roots").innerHTML=ROOTS.map(([n,pc])=>`<button type="button" data-root="${pc}" aria-pressed="${pc===ui.root}">${n}</button>`).join("");
+  $("types").innerHTML=TYPES.map(([g,list])=>`<div class="grp"><span class="g">${g}</span>${list.map(t=>`<button type="button" class="chip" data-type="${t[0]}" aria-pressed="${t[0]===ui.type}">${t[1]}</button>`).join("")}</div>`).join("");
+  $("three").checked=ui.three;$("maxc").value=String(ui.maxc);$("core").checked=ui.core;
+}
+function diagram(g,fret,n){
+  const H=n*13+8,x0=22,x1=112;
+  let s=`<svg class="diag" viewBox="0 0 118 ${H}" role="img" aria-label="Strings ${g.strs.join(", ")}">`;
+  for(let i=1;i<=n;i++){const y=8+(i-1)*13,used=g.strs.includes(i);
+    s+=`<text x="12" y="${y+3.5}" text-anchor="end" font-size="9" font-family="IBM Plex Mono,monospace" fill="${used?"var(--ink)":"var(--muted)"}">${i}</text><line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="${used?"var(--ink)":"var(--string)"}" stroke-width="${used?1.4:0.8}"/>`}
+  g.strs.forEach((sn,i)=>{const y=8+(sn-1)*13,pc=(((g.pit[i]+fret)%12)+12)%12,iv=IV[(g.pit[i]-g.r0+1200)%12];
+    const lab=(ui.type==="dim7"&&iv==="6")?"bb7":iv,isR=iv==="R";
+    s+=`<circle cx="44" cy="${y}" r="6.2" fill="${isR?"var(--root)":"var(--accent)"}"/><text x="44" y="${y+3}" text-anchor="middle" font-size="${lab.length>1?6.5:8}" font-weight="600" font-family="IBM Plex Sans,sans-serif" fill="var(--panel)">${lab}</text><text x="58" y="${y+3.5}" font-size="10" font-family="IBM Plex Mono,monospace" fill="var(--ink)">${spell(pc)}</text>`});
+  return s+`</svg>`;
+}
+let list=[];
+function renderFind(){
+  const p=prof(),n=p.strings.length;
+  $("title").textContent=chordName();$("formula").textContent=FORM[ui.type];
+  list=search(p,ui.type).filter(g=>(!ui.three||g.strs.length===3)&&g.moves<=ui.maxc&&(!ui.core||!g.outer));
+  $("count").textContent=list.length?`${list.length} way${list.length>1?"s":""} to play it on ${p.name}`:"";
+  if(!list.length){$("grid").innerHTML=`<div class="empty">No grips with these filters. Allow more moves, include the outer strings, or add changes on the Copedent tab.</div>`;$("more").hidden=true}
+  else{
+    $("grid").innerHTML=list.slice(0,shown).map((g,i)=>{
+      const fret=((ui.root-g.r0)%12+12)%12,alt=fret+12;
+      const tones=g.strs.map((sn,j)=>{const iv=IV[(g.pit[j]-g.r0+1200)%12];return ui.type==="dim7"&&iv==="6"?"bb7":iv}).join(" ");
+      return `<article class="card"><div>${diagram(g,fret,n)}</div><div class="meta">
+        <div class="fret">Fret ${fret}<small>${fret===0?"open position, or fret 12":alt<=24?`or fret ${alt}`:""}</small></div>
+        <div class="hold${g.name?"":" open"}">${g.name?"Hold "+esc(g.name):"No pedals or levers"}</div>
+        <div class="strs">Strings ${g.strs.join("-")}</div><div class="tones">${tones}</div>
+        <div class="tags">${g.moves<=1&&g.tight?`<span class="tag easy">Easy grip</span>`:""}${g.bassRoot?`<span class="tag">Root in bass</span>`:""}${g.strs.length===4?`<span class="tag">4 strings</span>`:""}</div>
+        <button class="play" type="button" data-play="${i}">&#9654; Play</button></div></article>`}).join("");
+    $("more").hidden=list.length<=shown;
+  }
+  $("copNote").textContent="Copedent: "+describe(p);
+}
+function describe(p){
+  if(!p.changes.length)return `${p.name}, no pedals or levers set yet.`;
+  return p.changes.map(c=>{const parts=Object.keys(c.pulls).filter(k=>+c.pulls[k]).sort((a,b)=>a-b).map(k=>{const o=toMidi(p.strings[k-1]?.note);return o==null?"":`${k} to ${PC[(((o+(+c.pulls[k]))%12)+12)%12]}`}).filter(Boolean);return `${c.name}: ${parts.join(", ")||"no change"}`}).join(". ")+".";
+}
+
+// ---------- copedent view ----------
+let armed=null;
+function renderCop(){
+  const p=prof(),n=p.strings.length;
+  $("profName").value=p.name;$("nStr").textContent=n;$("maxPed").value=String(p.maxPedals);$("sameKnee").checked=!!p.sameKnee;
+  $("delProf").textContent=armed==="prof"?"Tap again to delete":"Delete";$("delProf").classList.toggle("arm",armed==="prof");
+  $("delProf").disabled=store.profiles.length<2;
+  let h=`<thead><tr><th class="sn" scope="col">Str</th><th scope="col" style="border-right:2px solid var(--line)"><span class="label" style="margin:0">Open</span></th>`;
+  p.changes.forEach((c,ci)=>{h+=`<th class="chg" scope="col"><input data-cname="${ci}" value="${esc(c.name)}" aria-label="Change name"><br><select data-ckind="${ci}" aria-label="Where it sits">${KINDS.map(([k,l])=>`<option value="${k}"${k===c.kind?" selected":""}>${l}</option>`).join("")}</select><button class="x${armed==="c"+ci?" arm":""}" data-crm="${ci}" type="button">${armed==="c"+ci?"Tap again to remove":"Remove"}</button></th>`});
+  h+=`</tr></thead><tbody>`;
+  p.strings.forEach((s,si)=>{const om=toMidi(s.note);
+    h+=`<tr><th class="sn" scope="row">${si+1}</th><td class="open"><select data-open="${si}" aria-label="String ${si+1} open note">${NOTE_CHOICES.map(x=>`<option${x===s.note?" selected":""}>${x}</option>`).join("")}</select></td>`;
+    p.changes.forEach((c,ci)=>{const v=+(c.pulls[si+1]||0),cls=v>0?"up":v<0?"dn":"";let o="";
+      for(let d=-4;d<=4;d++){const lbl=d===0?"—":`${PC[(((om+d)%12)+12)%12]} ${d>0?"↑":"↓"}${Math.abs(d)}`;o+=`<option value="${d}"${d===v?" selected":""}>${lbl}</option>`}
+      h+=`<td class="cell ${cls}"><select data-cell="${ci}:${si+1}" aria-label="String ${si+1} with ${esc(c.name)}">${o}</select></td>`});
+    h+=`</tr>`});
+  $("copTable").innerHTML=h+`</tbody>`;
+  $("exportBox").value=JSON.stringify(exportObj(p));
+  if(document.activeElement!==$("techNotes"))$("techNotes").value=p.notes||"";
+  $("eraseAll").textContent=armed==="erase"?"Tap again to erase everything":"Erase all steels";$("eraseAll").classList.toggle("arm",armed==="erase");
+}
+function renderProfSel(){$("profSel").innerHTML=store.profiles.map(p=>`<option value="${p.id}"${p.id===store.active?" selected":""}>${esc(p.name)}</option>`).join("");
+  $("presetSel").innerHTML=PRESET_LABELS.map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}
+function newId(){return "p"+Date.now().toString(36)+Math.floor(Math.random()*1e4)}
+function changed(){persist();renderProfSel();if(ui.tab==="find"){shown=12;renderFind()}}
+
+// ---------- events ----------
+function setTab(t){ui.tab=t;$("tab-find").setAttribute("aria-selected",t==="find");$("tab-cop").setAttribute("aria-selected",t==="cop");$("findView").hidden=t!=="find";$("copView").hidden=t!=="cop";armed=null;if(t==="find"){shown=12;renderFind()}else renderCop();persist()}
+$("tab-find").onclick=()=>setTab("find");$("tab-cop").onclick=()=>setTab("cop");
+$("profSel").onchange=e=>{store.active=e.target.value;armed=null;persist();ui.tab==="find"?(shown=12,renderFind()):renderCop()};
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  const p=prof();
+  if(b.dataset.root!==undefined){ui.root=+b.dataset.root;shown=12;renderPicker();renderFind();persist()}
+  else if(b.dataset.type){ui.type=b.dataset.type;shown=12;renderPicker();renderFind();persist()}
+  else if(b.dataset.play!==undefined){const g=list[+b.dataset.play],fret=((ui.root-g.r0)%12+12)%12;[...g.pit].sort((a,c)=>a-c).forEach((x,i)=>pluck(x+fret,i*0.09))}
+  else if(b.id==="more"){shown+=12;renderFind()}
+  else if(b.dataset.crm!==undefined){const ci=+b.dataset.crm;if(armed==="c"+ci){p.changes.splice(ci,1);armed=null;changed()}else armed="c"+ci;renderCop()}
+  else if(b.id==="addStr"){if(p.strings.length<16){const last=p.strings[p.strings.length-1];p.strings.push({note:last?toName(toMidi(last.note)-3):"E2"});changed();renderCop()}}
+  else if(b.id==="rmStr"){if(p.strings.length>3){const n=p.strings.length;p.strings.pop();p.changes.forEach(c=>delete c.pulls[n]);changed();renderCop()}}
+  else if(b.id==="addPed"){const k=p.changes.filter(c=>c.kind==="pedal").length;p.changes.push({id:newId(),name:"P"+(k+1),kind:"pedal",pulls:{}});changed();renderCop()}
+  else if(b.id==="addLev"){p.changes.push({id:newId(),name:"Lever",kind:"LKL",pulls:{}});changed();renderCop()}
+  else if(b.id==="dup"){const c=JSON.parse(JSON.stringify(p));c.id=newId();c.name=p.name+" copy";store.profiles.push(c);store.active=c.id;armed=null;changed();renderCop()}
+  else if(b.id==="newProf"){const c=PRESETS[$("presetSel").value]();c.id=newId();store.profiles.push(c);store.active=c.id;armed=null;changed();renderCop()}
+  else if(b.id==="delProf"){if(store.profiles.length<2)return;if(armed==="prof"){store.profiles=store.profiles.filter(x=>x.id!==p.id);store.active=store.profiles[0].id;armed=null;changed()}else armed="prof";renderCop()}
+  else if(b.id==="copyExp"){const t=$("exportBox").value,ok=()=>{$("expMsg").textContent="Copied";setTimeout(()=>$("expMsg").textContent="",1800)};
+    try{navigator.clipboard.writeText(t).then(ok,()=>{$("exportBox").select();$("expMsg").textContent="Selected. Press Cmd-C to copy."})}catch(err){$("exportBox").select();$("expMsg").textContent="Selected. Press Cmd-C to copy."}}
+  else if(b.id==="doImport"){const m=$("impMsg");m.className="msg";
+    if(importData($("importBox").value)){$("importBox").value="";m.textContent="Imported"}else{m.className="msg err";m.textContent="That text isn't a copedent from this app. Copy it from the box on the left."}}
+  else if(b.id==="saveTxt"){saveFile(fileBase(p)+".txt",copedentText(p),"Text file")}
+  else if(b.id==="savePdf"){saveFile(fileBase(p)+".pdf",copedentPdf(p),"PDF")}
+  else if(b.id==="openFile"){$("fileIn").click()}
+  else if(b.id==="eraseAll"){if(armed==="erase"){const c=PRESETS.e9();c.id=newId();store.profiles=[c];store.active=c.id;armed=null;changed();renderCop();say("All steels erased. Open a copedent file to bring one back.")}else{armed="erase";renderCop()}}
+});
+document.addEventListener("change",e=>{
+  const t=e.target,d=t.dataset,p=prof();
+  if(t.id==="three"){ui.three=t.checked;shown=12;renderFind();persist()}
+  else if(t.id==="core"){ui.core=t.checked;shown=12;renderFind();persist()}
+  else if(t.id==="maxc"){ui.maxc=+t.value;shown=12;renderFind();persist()}
+  else if(t.id==="maxPed"){p.maxPedals=+t.value;changed()}
+  else if(t.id==="sameKnee"){p.sameKnee=t.checked;changed()}
+  else if(d.open!==undefined){p.strings[+d.open].note=t.value;changed();renderCop()}
+  else if(d.cell){const [ci,sn]=d.cell.split(":"),v=+t.value,pl=p.changes[+ci].pulls;if(v)pl[sn]=v;else delete pl[sn];changed();renderCop()}
+  else if(d.ckind!==undefined){p.changes[+d.ckind].kind=t.value;changed()}
+});
+document.addEventListener("input",e=>{
+  const t=e.target,d=t.dataset,p=prof();
+  if(t.id==="profName"){p.name=t.value.slice(0,80)||"Untitled";persist();renderProfSel()}
+  else if(t.id==="techNotes"){p.notes=t.value.slice(0,4000);persist()}
+  else if(d.cname!==undefined){p.changes[+d.cname].name=t.value.slice(0,12);persist()}
+});
+// ---------- files ----------
+function say(t,err){const m=$("fileMsg");m.className=err?"msg err":"msg";m.textContent=t;clearTimeout(say.t);say.t=setTimeout(()=>{m.textContent=""},5000)}
+function exportObj(p){return {name:p.name,strings:p.strings.map(s=>({note:s.note})),changes:p.changes.map(c=>({name:c.name,kind:c.kind,pulls:c.pulls})),maxPedals:p.maxPedals,sameKnee:!!p.sameKnee,notes:p.notes||""}}
+function importData(text){
+  try{
+    let raw=String(text||"").trim();const mark=raw.indexOf("--- CHORDS OF STEEL DATA");
+    if(mark>=0){raw=raw.slice(raw.indexOf("\n",mark)+1);raw=raw.slice(0,raw.lastIndexOf("}")+1)}
+    const d=JSON.parse(raw);
+    if(!Array.isArray(d.strings)||!d.strings.length||!Array.isArray(d.changes)||d.strings.some(s=>toMidi(s.note)==null))return false;
+    const c={id:newId(),name:String(d.name||"Imported copedent").slice(0,80),strings:d.strings.slice(0,16).map(s=>({note:s.note})),
+      changes:d.changes.slice(0,40).map((x,i)=>({id:"c"+i,name:String(x.name||"?").slice(0,12),kind:KINDS.some(k=>k[0]===x.kind)?x.kind:"other",pulls:Object.fromEntries(Object.entries(x.pulls||{}).filter(([k,v])=>+k>=1&&+k<=16&&Math.abs(+v)<=4&&+v).map(([k,v])=>[k,+v]))})),
+      maxPedals:[1,2,3].includes(+d.maxPedals)?+d.maxPedals:2,sameKnee:!!d.sameKnee,notes:String(d.notes||"").slice(0,4000)};
+    store.profiles.push(c);store.active=c.id;armed=null;changed();renderCop();return true;
+  }catch(e){return false}
+}
+$("fileIn").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{importData(r.result)?say(`Opened ${f.name}`):say("That file isn't a copedent saved from Chords of Steel.",true);e.target.value=""};
+  r.onerror=()=>say("Couldn't read that file.",true);r.readAsText(f)});
+const KLABEL=Object.fromEntries(KINDS);
+const fileBase=p=>("Copedent - "+p.name).replace(/[\\/:*?"<>|]+/g,"-").slice(0,100);
+const ascii=s=>String(s).replace(/[–—]/g,"-").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[^\x20-\x7E\n]/g,"?");
+const today=()=>{const d=new Date();return d.toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})};
+function changeLines(p){
+  return p.changes.map(c=>{const ks=Object.keys(c.pulls).filter(k=>+c.pulls[k]&&p.strings[k-1]).sort((a,b)=>a-b);
+    const parts=ks.map(k=>{const o=toMidi(p.strings[k-1].note),v=+c.pulls[k];return `string ${k} ${PC[((o%12)+12)%12]} to ${PC[(((o+v)%12)+12)%12]} (${v>0?"raise":"lower"} ${Math.abs(v)===1?"half step":Math.abs(v)===2?"whole step":Math.abs(v)+" half steps"})`});
+    return {head:`${c.name} (${KLABEL[c.kind]||c.kind})`,body:parts.length?parts.join("; "):"no change set"}});
+}
+function cellText(p,ci,si){const v=+(p.changes[ci].pulls[si+1]||0);if(!v)return "";const o=toMidi(p.strings[si].note);return PC[(((o+v)%12)+12)%12]+(v>0?" +":" -")+Math.abs(v)}
+function copedentText(p){
+  const L=[];L.push("CHORDS OF STEEL - COPEDENT");L.push("");L.push("Steel: "+p.name);L.push("Saved: "+today());
+  L.push(`Strings: ${p.strings.length}   Pedals pressed at once: up to ${p.maxPedals}   Side and vertical lever on one knee: ${p.sameKnee?"yes":"no"}`);L.push("");
+  const heads=["Str","Open"].concat(p.changes.map(c=>c.name));
+  const rows=p.strings.map((s,si)=>[String(si+1),s.note].concat(p.changes.map((c,ci)=>cellText(p,ci,si)||".")));
+  const w=heads.map((h,i)=>Math.max(h.length,...rows.map(r=>r[i].length))+2);
+  const fmt=r=>r.map((x,i)=>x.padEnd(w[i])).join("").trimEnd();
+  L.push("CHART (note the string goes to; + raises, - lowers, in half steps; . = no change)");L.push(fmt(heads));L.push(w.map(n=>"-".repeat(n-1)).join(" "));rows.forEach(r=>L.push(fmt(r)));L.push("");
+  L.push("WHAT EACH CHANGE DOES");changeLines(p).forEach(c=>L.push(`${c.head}: ${c.body}`));L.push("");
+  if(p.notes){L.push("NOTES FOR THE TECH");L.push(p.notes);L.push("")}
+  L.push("--- CHORDS OF STEEL DATA (keep this block; it lets the app open this file) ---");L.push(JSON.stringify(exportObj(p)));
+  return L.join("\n")+"\n";
+}
+function copedentPdf(p){
+  const nC=p.changes.length,land=nC>11;const PW=land?792:612,PH=land?612:792,M=40;
+  const pages=[];let ops=[],y=PH-M;
+  const esc2=t=>ascii(t).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)");
+  const text=(x,yy,t,size,bold,col)=>{ops.push(`${col||"0.08 0.11 0.14"} rg BT /${bold?"F2":"F1"} ${size} Tf ${x.toFixed(1)} ${yy.toFixed(1)} Td (${esc2(t)}) Tj ET`)};
+  const width=(t,size)=>ascii(t).length*size*0.52;
+  const rect=(x,yy,w,h,col)=>ops.push(`${col} rg ${x.toFixed(1)} ${yy.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re f`);
+  const line=(x1,y1,x2,y2,col,lw)=>ops.push(`${col||"0.8 0.82 0.85"} RG ${lw||0.6} w ${x1.toFixed(1)} ${y1.toFixed(1)} m ${x2.toFixed(1)} ${y2.toFixed(1)} l S`);
+  const newPage=()=>{pages.push(ops.join("\n"));ops=[];y=PH-M};
+  const need=h=>{if(y-h<M)newPage()};
+  text(M,y-18,"Copedent",22,true);text(PW-M-width("Chords of Steel",9),y-14,"Chords of Steel",9,false,"0.36 0.4 0.45");y-=40;
+  text(M,y,p.name,13,true);y-=16;
+  text(M,y,`Saved ${today()}  |  ${p.strings.length} strings  |  up to ${p.maxPedals} pedals pressed together  |  side + vertical lever on one knee: ${p.sameKnee?"yes":"no"}`,9,false,"0.36 0.4 0.45");y-=22;
+  const strW=26,openW=44,avail=PW-2*M-strW-openW,cw=nC?Math.min(70,avail/nC):0,rh=18;
+  const tableW=strW+openW+cw*nC;
+  const head=()=>{rect(M,y-rh-6,tableW,rh+6,"0.95 0.96 0.97");text(M+6,y-15,"Str",8,true,"0.36 0.4 0.45");text(M+strW+6,y-15,"Open",8,true,"0.36 0.4 0.45");
+    p.changes.forEach((c,ci)=>{const x=M+strW+openW+ci*cw;const nm=c.name.slice(0,9);text(x+cw/2-width(nm,9)/2,y-12,nm,9,true);const k={pedal:"pedal",LKL:"L knee, left",LKV:"L knee, up",LKR:"L knee, right",RKL:"R knee, left",RKV:"R knee, up",RKR:"R knee, right",other:"other"}[c.kind]||"";text(x+cw/2-width(k,6.5)/2,y-21,k,6.5,false,"0.36 0.4 0.45")});
+    y-=rh+6;line(M,y,M+tableW,y,"0.55 0.6 0.65",1)};
+  need(rh*3);head();
+  p.strings.forEach((s,si)=>{
+    if(y-rh<M){newPage();head()}
+    const yy=y-rh;
+    p.changes.forEach((c,ci)=>{const v=+(c.pulls[si+1]||0);if(!v)return;const x=M+strW+openW+ci*cw;rect(x+2,yy+2,cw-4,rh-4,v>0?"0.86 0.91 0.97":"0.96 0.89 0.81");
+      const t=cellText(p,ci,si);text(x+cw/2-width(t,9)/2,yy+5.5,t,9,true,v>0?"0.12 0.37 0.75":"0.62 0.35 0.05")});
+    text(M+8,yy+5.5,String(si+1),10,true);text(M+strW+6,yy+5.5,s.note,10,false);
+    line(M,yy,M+tableW,yy);y=yy;
+  });
+  line(M+strW,y,M+strW,y+rh*p.strings.length,"0.8 0.82 0.85");line(M+strW+openW,y,M+strW+openW,y+rh*p.strings.length,"0.55 0.6 0.65",1);
+  y-=12;text(M,y,"Cells show the note the string goes to while that pedal or lever is engaged. + raises and - lowers, in half steps. Blank = no change.",8,false,"0.36 0.4 0.45");y-=26;
+  const wrap=(t,size,maxW)=>{const words=ascii(t).split(/\s+/),out=[];let cur="";words.forEach(w=>{const tryS=cur?cur+" "+w:w;if(width(tryS,size)>maxW&&cur){out.push(cur);cur=w}else cur=tryS});if(cur)out.push(cur);return out};
+  need(30);text(M,y,"What each change does",12,true);y-=18;
+  changeLines(p).forEach(c=>{const ls=wrap(c.body,9.5,PW-2*M-14);need(13*ls.length+20);text(M,y,c.head,9.5,true);y-=13;ls.forEach(l=>{text(M+14,y,l,9.5,false);y-=13});y-=5});
+  if(p.notes){y-=10;need(40);text(M,y,"Notes for the tech",12,true);y-=18;p.notes.split("\n").forEach(par=>{wrap(par||" ",10,PW-2*M).forEach(l=>{need(14);text(M,y,l,10,false);y-=14})})}
+  newPage();
+  const objs=[];const add=s=>{objs.push(s);return objs.length};
+  const cat=add(""),pagesObj=add(""),f1=add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"),f2=add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>");
+  const kids=[];pages.forEach(c=>{const st=add(`<< /Length ${c.length} >>\nstream\n${c}\nendstream`);kids.push(add(`<< /Type /Page /Parent ${pagesObj} 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${st} 0 R >>`))});
+  objs[cat-1]=`<< /Type /Catalog /Pages ${pagesObj} 0 R >>`;objs[pagesObj-1]=`<< /Type /Pages /Kids [${kids.map(k=>k+" 0 R").join(" ")}] /Count ${kids.length} >>`;
+  let out="%PDF-1.4\n";const offs=[];objs.forEach((o,i)=>{offs.push(out.length);out+=`${i+1} 0 obj\n${o}\nendobj\n`});
+  const x=out.length;out+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+offs.map(o=>String(o).padStart(10,"0")+" 00000 n \n").join("")+`trailer\n<< /Size ${objs.length+1} /Root ${cat} 0 R >>\nstartxref\n${x}\n%%EOF\n`;
+  const bytes=new Uint8Array(out.length);for(let i=0;i<out.length;i++)bytes[i]=out.charCodeAt(i)&255;return bytes;
+}
+function toB64(data){const bytes=typeof data==="string"?new TextEncoder().encode(data):data;let s="";for(let i=0;i<bytes.length;i+=8192)s+=String.fromCharCode.apply(null,bytes.subarray(i,i+8192));return btoa(s)}
+window.__saved=ok=>say(ok?"Saved":"Not saved",!ok);
+async function saveFile(name,data,kind){
+  const mh=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.saveFile;
+  if(mh){mh.postMessage({filename:name,base64:toB64(data)});return}
+  let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(e){}
+  if(dl){try{await dl.save({filename:name,data:typeof data==="string"?data:data.slice(0)});say(kind+" saved")}catch(e){if(e&&e.code==="declined")return;say("Couldn't save the file here. Use Copy as text instead.",true)}return}
+  try{const blob=new Blob([data],{type:name.endsWith(".pdf")?"application/pdf":"text/plain"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);say(kind+" saved")}
+  catch(e){say("Couldn't save the file here. Use Copy as text instead.",true)}
+}
+let ctx;
+function pluck(m,when){try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();const t=ctx.currentTime+when,f=440*Math.pow(2,(m-69)/12);
+  const o=ctx.createOscillator(),o2=ctx.createOscillator(),g=ctx.createGain();o.type="triangle";o2.type="sine";o.frequency.value=f;o2.frequency.value=f*2;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.16,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+2.2);
+  o.connect(g);o2.connect(g);g.connect(ctx.destination);[o,o2].forEach(x=>{x.start(t);x.stop(t+2.3)})}catch(e){}}
+renderProfSel();renderPicker();setTab(ui.tab==="cop"?"cop":"find");
+</script>
+</body></html>
